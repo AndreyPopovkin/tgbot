@@ -5,11 +5,24 @@ from datetime import date, time
 import urllib.request as urllib2
 import const
 from telebot import types
-import logging
-import time
-import eventlet
-import requests
-from time import sleep
+
+bot = telebot.TeleBot(const.token)  # poluchenie tokena
+
+print(bot.get_me())  # vivod informacii o bote
+
+# настройки для журнала
+logger = logging.getLogger('log')
+logger.setLevel(logging.INFO)
+fh = logging.FileHandler('someTestBot.log')
+fh.setLevel(logging.DEBUG)
+formatter = logging.Formatter("%(asctime)s | %(levelname)-7s | %(message)s")
+fh.setFormatter(formatter)
+logger.addHandler(fh)
+
+
+@bot.message_handler(commands=['start', 'help'])  # privetstvie
+def send_welcome(start):
+    bot.send_message(start.chat.id, const.helo_text)
 
 
 
