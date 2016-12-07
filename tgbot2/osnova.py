@@ -17,7 +17,7 @@ else:
 
 bot = telebot.TeleBot(const.token)  # poluchenie tokena
 
-print bot.get_me()  # vivod informacii o bote
+print (bot.get_me())  # vivod informacii o bote
 
 # настройки для журнала
 logger = logging.getLogger('log')
@@ -50,7 +50,7 @@ def table_offline(message):
         keyboard.add(url_button)
         bot.send_message(message.chat.id, "Нажми на кнопку и скачай ", reply_markup=keyboard)
     except AttributeError:
-        print u"can't download :("
+        print ("can't download :(")
 
 global relay
 relay = ['None', 'None', 'None']
@@ -83,9 +83,9 @@ def callback_data(message0):
 def callback_1(call):
     global relay
 
-    formatted_data = call.data.encode('utf-8').strip()
-    if formatted_data == u"ВОД".encode('utf-8').strip() or \
-                    formatted_data == u"ПИН".encode('utf-8').strip():
+    formatted_data = call.data
+    print (formatted_data)
+    if formatted_data == "ВОД" or formatted_data == "ПИН":
         bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text=call.data)
         const.kod = call.data
         relay[0] = call.data
@@ -98,10 +98,10 @@ def callback_1(call):
         const.group = call.data
         relay[2] = formatted_data
     else:
-        print "something unexpected callback"
+        print ("something unexpected callback")
 
     if relay[0] != "None" and relay[1] != "None" and relay[2] != "None":
-        response = u'''Выберите день недели:
+        response = '''Выберите день недели:
                         1. Понедельник
                         2. Вторник
                         3. Среда
@@ -125,9 +125,9 @@ def handle_text(msg):
             group_name = relay[0] + '-' + relay[1] + '-' + relay[2]
             bot.send_message(msg.chat.id, exel.getTimeTable(group_name, const.name_exel, int(msg.text)))
         else:
-            bot.send_message(msg.chat.id, u"введен неверный день недели")   
+            bot.send_message(msg.chat.id, "введен неверный день недели")   
     else:
-        bot.send_message(msg.chat.id, u"пожалуйста воспользуйтесь одной из предложенных команд (/help)")
+        bot.send_message(msg.chat.id, "пожалуйста воспользуйтесь одной из предложенных команд (/help)")
 
 if __name__ == '__main__':
     bot.polling(none_stop=True)
