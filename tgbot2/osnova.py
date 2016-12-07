@@ -2,13 +2,22 @@
 import array
 import telebot
 from datetime import date, time
-import urllib.request as urllib2
+import sys
 import const
 from telebot import types
+import logging
+import exel
+
+version = sys.version_info[0]
+
+if version == 3:
+    import urllib.request as urllib2
+else:
+    import urllib2
 
 bot = telebot.TeleBot(const.token)  # poluchenie tokena
 
-print(bot.get_me())  # vivod informacii o bote
+print bot.get_me()  # vivod informacii o bote
 
 # настройки для журнала
 logger = logging.getLogger('log')
@@ -30,21 +39,29 @@ def send_welcome(start):
 def table_offline(message):
     keyboard = types.InlineKeyboardMarkup()
     url = const.url_pic_download
-    urllib2.urlretrieve(url, )
-    img = open(const.name_pic_download, 'rb')
-    bot.send_chat_action(message.from_user.id, 'upload_photo')
-    bot.send_photo(message.from_user.id, img)
-    img.close()
-    url_button = types.InlineKeyboardButton(text="Расписание офлайн",
-                                            url=const.url_exel)
-    keyboard.add(url_button)
-    bot.send_message(message.chat.id, "Нажми на кнопку и скачай ", reply_markup=keyboard)
+    try:
+        urllib2.urlretrieve(url, )
+        img = open(const.name_pic_download, 'rb')
+        bot.send_chat_action(message.from_user.id, 'upload_photo')
+        bot.send_photo(message.from_user.id, img)
+        img.close()
+        url_button = types.InlineKeyboardButton(text="Расписание офлайн",
+                                                url=const.url_exel)
+        keyboard.add(url_button)
+        bot.send_message(message.chat.id, "Нажми на кнопку и скачай ", reply_markup=keyboard)
+    except AttributeError:
+        print u"can't download :("
 
+global relay
+relay = ['None', 'None', 'None']
 
 @bot.message_handler(commands=["table"])  # выбокра
 def callback_data(message0):
+    global relay
+    relay = ['None', 'None', 'None']
+
     keyboard = types.InlineKeyboardMarkup()
-    button = types.InlineKeyboardButton(text="ИНБ", callback_data="ИНБ")
+    button = types.InlineKeyboardButton(text="ВОД", callback_data="ВОД")
     button1 = types.InlineKeyboardButton(text="ПИН", callback_data="ПИН")
     keyboard.add(button, button1)
     bot.send_message(message0.chat.id, "Привет! Нажми на кнопку и... ИДИ НАХУЙ, ПИДР", reply_markup=keyboard)
@@ -62,42 +79,55 @@ def callback_data(message0):
     bot.send_message(message0.chat.id, "Привет! Нажми на кнопку и... ИДИ НАХУЙ, ПИДР", reply_markup=keyboard2)
 
 
-
 @bot.callback_query_handler(func=lambda call: True)
 def callback_1(call):
-    poz = int
+    global relay
 
-    while str(call.data) == "ИНБ" or "ПИН":
+    formatted_data = call.data.encode('utf-8').strip()
+    if formatted_data == u"ВОД".encode('utf-8').strip() or \
+                    formatted_data == u"ПИН".encode('utf-8').strip():
         bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text=call.data)
         const.kod = call.data
-
-        poz = (poz, "a")
-
-
-    while str(call.data) == "2016" or "2015":
+        relay[0] = call.data
+    elif formatted_data == "2016" or formatted_data == "2015":
         bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text=call.data)
         const.god = call.data
-        poz = (poz, "a")
-
-    while str(call.data) == "1" or "2":
+        relay[1] = formatted_data
+    elif formatted_data == "1" or formatted_data == "2":
         bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text=call.data)
-        const.groop = call.data
-        poz = (poz, "a")
+        const.group = call.data
+        relay[2] = formatted_data
+    else:
+        print "something unexpected callback"
 
-    if int(poz) == 'aaa':
-        sum = (const.kod, const.god, const.groop)
-        bot.send_message(call.chat.id, sum)
-
-
-
-
-
+    if relay[0] != "None" and relay[1] != "None" and relay[2] != "None":
+        response = u'''Выберите день недели:
+                        1. Понедельник
+                        2. Вторник
+                        3. Среда
+                        4. Четверг
+                        5. Пятница
+                        6. Суббота
+                        7. Сегодня
+                        8. Завтра
+                    '''
+        bot.send_message(call.message.chat.id, response)
 
 @bot.message_handler(commands=["lol"])
 def sumcod(sum):
-    sum = (const.kod, const.god, const.groop)
-    bot.send_message(sum.chat.id, sum)
+    response = (const.kod, const.god, const.group)
+    bot.send_message(sum.chat.id, response)
 
+@bot.message_handler(content_types=["text"])
+def handle_text(msg):
+    if relay[0] != "None" and relay[1] != "None" and relay[2] != "None":
+        if "1" <= msg.text <= "8" and len(msg.text) == 1:
+            group_name = relay[0] + '-' + relay[1] + '-' + relay[2]
+            bot.send_message(msg.chat.id, exel.getTimeTable(group_name, const.name_exel, int(msg.text)))
+        else:
+            bot.send_message(msg.chat.id, u"введен неверный день недели")   
+    else:
+        bot.send_message(msg.chat.id, u"пожалуйста воспользуйтесь одной из предложенных команд (/help)")
 
 if __name__ == '__main__':
     bot.polling(none_stop=True)

@@ -1,104 +1,63 @@
+# -*- coding: utf-8 -*-
+
 import xlrd
 import xlwt
 import time
 import const
 
-
-
-while True:
-
-    i = 14;
-    j = 2;
-    a = 1;
-    workbook = xlrd.open_workbook(const.name_exel)
-    worksheet = workbook.sheet_by_name(const.name_groop)
-
-    des = int(input('''-----------------------------
-Выберите день недели:
-      1. Понедельник
-      2. Вторник
-      3. Среда
-      4. Четверг
-      5. Пятница
-      6. Суббота
-      7. Сегодня
-      8. Завтра
-      '''))
+"""
+1. Понедельник
+2. Вторник
+3. Среда
+4. Четверг
+5. Пятница
+6. Суббота
+7. Сегодня
+8. Завтра
+"""
+def getTimeTable(group_name, exel_name, decision):
+    workbook = xlrd.open_workbook(exel_name)
+    try:
+        #print group_name
+        #print u"ВОД-2015-1"
+        #print u"ВОД-2015-1" == group_name
+        worksheet = workbook.sheet_by_name(unicode(group_name))
+        #worksheet = workbook.sheet_by_name(u"ВОД-2015-1")
+    except xlrd.biffh.XLRDError:
+        print u"group_name_error"
+        return u"wrong group name, maybe this group isn't in new table, please write to support\n"
+    dataLine = 14;
+    dataColumn = 2;
 
     weeknum = "%U"
     week = int(time.strftime(weeknum))
     if (week % 2 == 0):
-        i += 1
+        dataLine += 1
 
-    if des == 7:
+    if decision == 7:
         daynum = "%w"
         day = int(time.strftime(daynum))
-        des = day
-
-
-    elif des == 8:
+        decision = day
+    elif decision == 8:
         daynum = "%w"
         day = int(time.strftime(daynum))
-        des = day + 1
+        decision = day + 1
         if (day == 0):
             week += 1
 
-    if des == 1:
+    ans = u""
+    if 1 <= decision and decision <= 6:
+        a = 1
         while (a <= 6):
-            clock = worksheet.cell(i, j).value
-            name = worksheet.cell(i, j + 2).value
-            aud = worksheet.cell(i, j + 3).value
-            print(a, " пара:", clock, name, aud)
+            weekdayShift = 12 * (decision - 1)
+            clock = worksheet.cell(dataLine + weekdayShift, dataColumn).value
+            name = worksheet.cell(dataLine + weekdayShift, dataColumn + 2).value
+            aud = worksheet.cell(dataLine + weekdayShift, dataColumn + 3).value
+            ans += str(a) + u" пара:" \
+                + clock + ' ' + \
+                name + ' ' + aud + u"\n"
             a += 1
-            i += 2
-
-
-    elif des == 2:
-        while (a <= 6):
-            clock = worksheet.cell(i + 12, j).value
-            name = worksheet.cell(i + 12, j + 2).value
-            aud = worksheet.cell(i + 12, j + 3).value
-            print(a, " пара:", clock, name, aud)
-            a += 1
-            i += 2
-
-
-    elif des == 3:
-        while (a <= 6):
-            clock = worksheet.cell(i + 24, j).value
-            name = worksheet.cell(i + 24, j + 2).value
-            aud = worksheet.cell(i + 24, j + 3).value
-            print(a, " пара:", clock, name, aud)
-            a += 1
-            i += 2
-
-
-    elif des == 4:
-        while (a <= 6):
-            clock = worksheet.cell(i + 36, j).value
-            name = worksheet.cell(i + 36, j + 2).value
-            aud = worksheet.cell(i + 36, j + 3).value
-            print(a, " пара:", clock, name, aud)
-            a += 1
-            i += 2
-
-
-    elif des == 5:
-        while (a <= 6):
-            clock = worksheet.cell(i + 48, j).value
-            name = worksheet.cell(i + 48, j + 2).value
-            aud = worksheet.cell(i + 48, j + 3).value
-            print(a, " пара:", clock, name, aud)
-            a += 1
-            i += 2
-
-
-    elif des == 6:
-        while (a <= 6):
-            clock = worksheet.cell(i + 60, j).value
-            name = worksheet.cell(i + 60, j + 2).value
-            aud = worksheet.cell(i + 60, j + 3).value
-            print(a, " пара:", clock, name, aud)
-            a += 1
-            i += 2
-
+            dataLine += 2
+    else:
+        ans = u"error, maybe wrong weekday index (found or calculated: {})".format(decision)
+    return ans
