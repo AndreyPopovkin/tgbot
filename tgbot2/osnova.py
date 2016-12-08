@@ -7,6 +7,10 @@ import const
 from telebot import types
 import logging
 import exel
+import os
+import time
+import shutil
+import urllib
 
 version = sys.version_info[0]
 
@@ -33,15 +37,36 @@ logger.addHandler(fh)
 def send_welcome(start):
     bot.send_message(start.chat.id, const.helo_text)
 
-
+def update_time_table():
+    print ("updating local time_table file")
+    try:
+        print ("last update time", os.path.getmtime(const.name_exel))
+        print ("current time", time.time())
+        if abs(time.time() - os.path.getmtime(const.name_exel)) < 24 * 60 * 60:
+            print ("local file is up to date")
+            return 1
+        print ("file may be out of date, downloading")
+    except FileNotFoundError:
+        print ("local file not found, downloading")
+    try:
+        localFilename, headers = urllib2.urlretrieve(const.url_exel, )
+    except urllib.error.HTTPError:
+        print ("warning, can't update local copy, it may be non actual")
+        return 0
+    fromFile = localFilename
+    toFile = const.name_exel
+    shutil.copy(fromFile, toFile)
+    print ("downloading done")
+    return 1
 
 @bot.message_handler(commands=["table_offline"])  # Офлайн расписание
 def table_offline(message):
     keyboard = types.InlineKeyboardMarkup()
     url = const.url_pic_download
     try:
-        urllib2.urlretrieve(url, )
-        img = open(const.name_pic_download, 'rb')
+        localFilename, headers = urllib2.urlretrieve(url, )
+        #print (localFilename)
+        img = open(localFilename, 'rb')
         bot.send_chat_action(message.from_user.id, 'upload_photo')
         bot.send_photo(message.from_user.id, img)
         img.close()
@@ -64,19 +89,19 @@ def callback_data(message0):
     button = types.InlineKeyboardButton(text="ВОД", callback_data="ВОД")
     button1 = types.InlineKeyboardButton(text="ПИН", callback_data="ПИН")
     keyboard.add(button, button1)
-    bot.send_message(message0.chat.id, "Привет! Нажми на кнопку и... ИДИ НАХУЙ, ПИДР", reply_markup=keyboard)
+    bot.send_message(message0.chat.id, "Привет! Нажми на кнопку и... ИДИ дальше, студент", reply_markup=keyboard)
 
     keyboard1 = types.InlineKeyboardMarkup()
     button = types.InlineKeyboardButton(text="2016", callback_data="2016")
     button1 = types.InlineKeyboardButton(text="2015", callback_data="2015")
     keyboard1.add(button, button1)
-    bot.send_message(message0.chat.id, "Привет! Нажми на кнопку и... ИДИ НАХУЙ, ПИДР", reply_markup=keyboard1)
+    bot.send_message(message0.chat.id, "Привет! Нажми на кнопку и... ИДИ дальше, студент", reply_markup=keyboard1)
 
     keyboard2 = types.InlineKeyboardMarkup()
     button = types.InlineKeyboardButton(text="1", callback_data="1")
     button1 = types.InlineKeyboardButton(text="2", callback_data="2")
     keyboard2.add(button, button1)
-    bot.send_message(message0.chat.id, "Привет! Нажми на кнопку и... ИДИ НАХУЙ, ПИДР", reply_markup=keyboard2)
+    bot.send_message(message0.chat.id, "Привет! Нажми на кнопку и... ИДИ дальше, студент", reply_markup=keyboard2)
 
 
 @bot.callback_query_handler(func=lambda call: True)
@@ -122,6 +147,11 @@ def sumcod(sum):
 def handle_text(msg):
     if relay[0] != "None" and relay[1] != "None" and relay[2] != "None":
         if "1" <= msg.text <= "8" and len(msg.text) == 1:
+            if not update_time_table():
+                bot.send_message(msg.chat.id, "\
+                    WARNING: копию расписания на сервере не удалось обновить, \
+                    возможно показанная информация не соответствует действительности\
+                ")
             group_name = relay[0] + '-' + relay[1] + '-' + relay[2]
             bot.send_message(msg.chat.id, exel.getTimeTable(group_name, const.name_exel, int(msg.text)))
         else:
@@ -130,4 +160,11 @@ def handle_text(msg):
         bot.send_message(msg.chat.id, "пожалуйста воспользуйтесь одной из предложенных команд (/help)")
 
 if __name__ == '__main__':
+    update_time_table()
     bot.polling(none_stop=True)
+
+
+"""
+ПИН-Б-0-Д-2013-1
+ТЕХ-Б-1-Д-2013-1
+"""
