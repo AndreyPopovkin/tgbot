@@ -77,83 +77,47 @@ def table_offline(message):
     except AttributeError:
         print ("can't download :(")
 
-global relay
-relay = ['None', 'None', 'None']
+global group_name_
+group_name_ = 'None'
+global flag
+flag = 0
 
-@bot.message_handler(commands=["table"])  # выбокра
+@bot.message_handler(commands=["setGroup"])  # выбокра
 def callback_data(message0):
-    global relay
-    relay = ['None', 'None', 'None']
-
-    keyboard = types.InlineKeyboardMarkup()
-    button = types.InlineKeyboardButton(text="ВОД", callback_data="ВОД")
-    button1 = types.InlineKeyboardButton(text="ПИН", callback_data="ПИН")
-    keyboard.add(button, button1)
-    bot.send_message(message0.chat.id, "Привет! Нажми на кнопку и... ИДИ дальше, студент", reply_markup=keyboard)
-
-    keyboard1 = types.InlineKeyboardMarkup()
-    button = types.InlineKeyboardButton(text="2016", callback_data="2016")
-    button1 = types.InlineKeyboardButton(text="2015", callback_data="2015")
-    keyboard1.add(button, button1)
-    bot.send_message(message0.chat.id, "Привет! Нажми на кнопку и... ИДИ дальше, студент", reply_markup=keyboard1)
-
-    keyboard2 = types.InlineKeyboardMarkup()
-    button = types.InlineKeyboardButton(text="1", callback_data="1")
-    button1 = types.InlineKeyboardButton(text="2", callback_data="2")
-    keyboard2.add(button, button1)
-    bot.send_message(message0.chat.id, "Привет! Нажми на кнопку и... ИДИ дальше, студент", reply_markup=keyboard2)
-
-
-@bot.callback_query_handler(func=lambda call: True)
-def callback_1(call):
-    global relay
-
-    formatted_data = call.data
-    print (formatted_data)
-    if formatted_data == "ВОД" or formatted_data == "ПИН":
-        bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text=call.data)
-        const.kod = call.data
-        relay[0] = call.data
-    elif formatted_data == "2016" or formatted_data == "2015":
-        bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text=call.data)
-        const.god = call.data
-        relay[1] = formatted_data
-    elif formatted_data == "1" or formatted_data == "2":
-        bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text=call.data)
-        const.group = call.data
-        relay[2] = formatted_data
-    else:
-        print ("something unexpected callback")
-
-    if relay[0] != "None" and relay[1] != "None" and relay[2] != "None":
-        response = '''Выберите день недели:
-                        1. Понедельник
-                        2. Вторник
-                        3. Среда
-                        4. Четверг
-                        5. Пятница
-                        6. Суббота
-                        7. Сегодня
-                        8. Завтра
-                    '''
-        bot.send_message(call.message.chat.id, response)
-
-@bot.message_handler(commands=["lol"])
-def sumcod(sum):
-    response = (const.kod, const.god, const.group)
-    bot.send_message(sum.chat.id, response)
+    global flag
+    bot.send_message(message0.chat.id, "Введите вашу группу в формате: (сам что-нибудь придумай)")
+    flag = 1
 
 @bot.message_handler(content_types=["text"])
 def handle_text(msg):
-    if relay[0] != "None" and relay[1] != "None" and relay[2] != "None":
+    global flag, group_name_
+    #print (flag)
+    if flag == 1:
+        #print (msg.text)
+        if exel.getTimeTable(msg.text, const.name_exel, 0)[1]:
+            group_name_ = msg.text
+            bot.send_message(msg.chat.id, "ok. Введенная группа найдена")
+            bot.send_message(msg.chat.id, "Теперь Вы можете спросить расписание на:\n" + const.timeTableAnons)
+        else:
+            bot.send_message(msg.chat.id, '\
+Группа не найдена в таблице, пожалуйста \
+введите верное название -- снова введите команду /setGroup \
+или скачайте расписание (/table_offline)\
+            ')
+        flag = 0
+        return
+    if group_name_ == "None":
+        bot.send_message(msg.chat.id, "Пожалуйста, установите Вашу группу (команда /setGroup)")
+        return
+    bot.send_message(msg.chat.id, "Ваша группа: " + group_name_)
+    if group_name_ != "None":
         if "1" <= msg.text <= "8" and len(msg.text) == 1:
             if not update_time_table():
-                bot.send_message(msg.chat.id, "\
+                bot.send_message(msg.chat.id, '\
                     WARNING: копию расписания на сервере не удалось обновить, \
                     возможно показанная информация не соответствует действительности\
-                ")
-            group_name = relay[0] + '-' + relay[1] + '-' + relay[2]
-            bot.send_message(msg.chat.id, exel.getTimeTable(group_name, const.name_exel, int(msg.text)))
+                ')
+            bot.send_message(msg.chat.id, exel.getTimeTable(group_name_, const.name_exel, int(msg.text))[0])
         else:
             bot.send_message(msg.chat.id, "введен неверный день недели")   
     else:
@@ -167,4 +131,5 @@ if __name__ == '__main__':
 """
 ПИН-Б-0-Д-2013-1
 ТЕХ-Б-1-Д-2013-1
+ВОД-2015-1
 """

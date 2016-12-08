@@ -25,7 +25,7 @@ def getTimeTable(group_name, exel_name, decision):
         #worksheet = workbook.sheet_by_name(u"ВОД-2015-1")
     except xlrd.biffh.XLRDError:
         print ("group_name_error")
-        return "wrong group name, maybe this group isn't in new table, please write to support\n"
+        return ("wrong group name, maybe this group isn't in new table, please write to support\n", 0)
     dataLine = 14;
     dataColumn = 2;
 
@@ -60,4 +60,4 @@ def getTimeTable(group_name, exel_name, decision):
             dataLine += 2
     else:
         ans = "error, maybe wrong weekday index (found or calculated: {})".format(decision)
-    return ans
+    return (ans, 1)
